@@ -1067,8 +1067,8 @@ class LiveVarAnalysis
 {
     Compiler* m_compiler;
 
-    bool      m_changed;
-    bool      m_hasPossibleBackEdge;
+    bool m_changed;
+    bool m_hasPossibleBackEdge;
 
     bool      m_heapLiveIn;
     bool      m_heapLiveOut;
@@ -1076,11 +1076,17 @@ class LiveVarAnalysis
     VARSET_TP m_liveOut;
 
     LiveVarAnalysis(Compiler* compiler)
-        : m_compiler(compiler), m_changed(false), m_hasPossibleBackEdge(false), m_heapLiveIn(false), m_heapLiveOut(false), m_liveIn(VarSetOps::MakeEmpty(compiler)), m_liveOut(VarSetOps::MakeEmpty(compiler))
+        : m_compiler(compiler)
+        , m_changed(false)
+        , m_hasPossibleBackEdge(false)
+        , m_heapLiveIn(false)
+        , m_heapLiveOut(false)
+        , m_liveIn(VarSetOps::MakeEmpty(compiler))
+        , m_liveOut(VarSetOps::MakeEmpty(compiler))
     {
     }
 
-    void PerBlock(BasicBlock* block, bool updateInternalOnly, bool keepAliveThis)
+    void PerBlockAnalysis(BasicBlock* block, bool updateInternalOnly, bool keepAliveThis)
     {
         /* Compute the 'liveOut' set */
         VarSetOps::ClearD(m_compiler, m_liveOut);
@@ -1142,7 +1148,8 @@ class LiveVarAnalysis
 
         /* Has there been any change in either live set? */
 
-        if (!VarSetOps::Equal(m_compiler, block->bbLiveIn, m_liveIn) || !VarSetOps::Equal(m_compiler, block->bbLiveOut, m_liveOut))
+        if (!VarSetOps::Equal(m_compiler, block->bbLiveIn, m_liveIn) ||
+            !VarSetOps::Equal(m_compiler, block->bbLiveOut, m_liveOut))
         {
             if (updateInternalOnly)
             {
@@ -1150,8 +1157,10 @@ class LiveVarAnalysis
 
                 noway_assert(block->bbFlags & BBF_INTERNAL);
 
-                if (!VarSetOps::Equal(m_compiler, VarSetOps::Intersection(m_compiler, block->bbLiveIn, m_liveIn), m_liveIn) ||
-                    !VarSetOps::Equal(m_compiler, VarSetOps::Intersection(m_compiler, block->bbLiveOut, m_liveOut), m_liveOut))
+                if (!VarSetOps::Equal(m_compiler, VarSetOps::Intersection(m_compiler, block->bbLiveIn, m_liveIn),
+                                      m_liveIn) ||
+                    !VarSetOps::Equal(m_compiler, VarSetOps::Intersection(m_compiler, block->bbLiveOut, m_liveOut),
+                                      m_liveOut))
                 {
 #ifdef DEBUG
                     if (m_compiler->verbose)
@@ -1187,7 +1196,8 @@ class LiveVarAnalysis
 
     void Run(bool updateInternalOnly)
     {
-        const bool keepAliveThis = m_compiler->lvaKeepAliveAndReportThis() && m_compiler->lvaTable[m_compiler->info.compThisArg].lvTracked;
+        const bool keepAliveThis =
+            m_compiler->lvaKeepAliveAndReportThis() && m_compiler->lvaTable[m_compiler->info.compThisArg].lvTracked;
 
         /* Live Variable Analysis - Backward dataflow */
         do
@@ -1224,7 +1234,7 @@ class LiveVarAnalysis
                     }
                 }
 
-                PerBlock(block, updateInternalOnly, keepAliveThis);
+                PerBlockAnalysis(block, updateInternalOnly, keepAliveThis);
             }
             // if there is no way we could have processed a block without seeing all of its predecessors
             // then there is no need to iterate
